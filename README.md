@@ -1,7 +1,9 @@
 1. Install the Weathermap in the Observium / LibreNMS folder
 
+```
     cd /opt/observium 
     git clone https://github.com/nicolasvion/weathermap-for-observium.git weathermap
+```
 
 2. Edit data-pick.php and make sure the variables at the start are all ok.
 
@@ -15,8 +17,10 @@
 
 7. Enable the cron process:
 
+```
     */5 * * * * /opt/observium/html/weathermap/weathermap --config=/opt/observium/html/weathermap/configs/config.conf --image-uri=http://testurl.org/weathermap/maps/config.png 2>/dev/null 1>/dev/null
-        
+```
+
 8. If you are installing this into Observium then you can use the navbar-custom.inc.php by putting it into /opt/observium/html/includes/.
 
 **** IMPORTANT SECURITY *****
