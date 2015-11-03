@@ -1,0 +1,313 @@
+Only in weathermap.orig/: .DS_Store
+Only in weathermap/: .git
+Only in weathermap/: INSTALL
+diff -ur weathermap.orig/README weathermap/README
+--- weathermap.orig/README	2013-03-25 09:40:50.000000000 +0000
++++ weathermap/README	2013-12-06 02:15:56.000000000 +0000
+@@ -1,3 +1,7 @@
++This is  modified version of PHP Network Weathermap (orginal README is below)
++
++The modified version starts at version 0.1 by Neil Lathwood (neil@lathwood.co.uk) and currently includes basic support for picking out nodes and links from your observium install. See INSTALL for details.
++
+ This is PHP Network Weathermap, version 0.97b by Howard Jones (howie@thingy.com)
+ 
+ See the docs sub-directory for full HTML documentation, FAQ and example config.
+Only in weathermap.orig/: cacti-pick.php
+Only in weathermap/: changes.diff
+Only in weathermap.orig/configs: simple.conf
+Only in weathermap/: data-pick.php
+diff -ur weathermap.orig/editor-resources/editor.js weathermap/editor-resources/editor.js
+--- weathermap.orig/editor-resources/editor.js	2013-04-02 23:57:10.000000000 +0100
++++ weathermap/editor-resources/editor.js	2013-12-06 02:15:56.000000000 +0000
+@@ -92,7 +92,7 @@
+     
+     if(fromplug===1)
+     {
+-        jQuery("#tb_newfile").click( function() {window.location = "weathermap-cacti-plugin-mgmt.php";} )
++        jQuery("#tb_newfile").click( function() {window.location = "weathermap-observium-plugin-mgmt.php";} )
+     }
+     else
+     {
+@@ -126,8 +126,8 @@
+     jQuery('.wm_submit').click(do_submit);
+     jQuery('.wm_cancel').click(cancel_op);
+     
+-    jQuery('#link_cactipick').click(cactipicker).attr("href","#");
+-    jQuery('#node_cactipick').click(nodecactipicker).attr("href","#");
++    jQuery('#link_observiumpick').click(observiumpicker).attr("href","#");
++    jQuery('#node_observiumpick').click(nodeobserviumpicker).attr("href","#");
+     
+     jQuery('#xycapture').mouseover(function(event) {coord_capture(event);});
+     jQuery('#xycapture').mousemove(function(event) {coord_update(event);});
+@@ -238,12 +238,12 @@
+     document.frmMain.submit();
+     }
+ 
+-function cactipicker()
++function observiumpicker()
+     {
+     // make sure it isn't already opened
+     if (!newWindow || newWindow.closed)
+         {
+-        newWindow = window.open("", "cactipicker", "scrollbars=1,status=1,height=400,width=400,resizable=1");
++        newWindow = window.open("", "observiumpicker", "scrollbars=1,status=1,height=400,width=400,resizable=1");
+         }
+ 
+     else if (newWindow.focus)
+@@ -252,17 +252,17 @@
+         newWindow.focus();
+         }
+ 
+-    // newWindow.location = "cacti-pick.php?command=link_step1";
+-    newWindow.location = "cacti-pick.php?command=link_step1";
++    // newWindow.location = "data-pick.php?command=link_step1";
++    newWindow.location = "data-pick.php?command=link_step1";
+     }
+ 
+ 
+-function nodecactipicker()
++function nodeobserviumpicker()
+     {
+         // make sure it isn't already opened
+     if (!newWindow || newWindow.closed)
+         {
+-		newWindow = window.open("", "cactipicker", "scrollbars=1,status=1,height=400,width=400,resizable=1");
++		newWindow = window.open("", "observiumpicker", "scrollbars=1,status=1,height=400,width=400,resizable=1");
+         }
+ 
+     else if (newWindow.focus)
+@@ -271,7 +271,7 @@
+         newWindow.focus();
+         }
+ 
+-        newWindow.location = "cacti-pick.php?command=node_step1";
++        newWindow.location = "data-pick.php?command=node_step1";
+     }
+ 
+ function show_context_help(itemid, targetid)
+@@ -630,11 +630,17 @@
+             jQuery('#link_commentposin').prepend("<option selected value='" + mylink.commentposin + "'>" + mylink.commentposin + "%</option>");
+         }
+         
+-        document.getElementById('link_nodename1').firstChild.nodeValue = mylink.a;
+-        document.getElementById('link_nodename1a').firstChild.nodeValue = mylink.a;
+-        document.getElementById('link_nodename1b').firstChild.nodeValue = mylink.a;
++	var mynode1 = Nodes[mylink.a];
++	var mynode2 = Nodes[mylink.b];
++        //document.getElementById('link_nodename1').firstChild.nodeValue = mylink.a;
++        document.getElementById('link_nodename1').firstChild.nodeValue = mynode1.label;
++        //document.getElementById('link_nodename1a').firstChild.nodeValue = mylink.a;
++        document.getElementById('link_nodename1a').firstChild.nodeValue = mynode1.label;
++        //document.getElementById('link_nodename1b').firstChild.nodeValue = mylink.a;
++        document.getElementById('link_nodename1b').firstChild.nodeValue = mynode1.label;
+ 
+-        document.getElementById('link_nodename2').firstChild.nodeValue = mylink.b;
++        //document.getElementById('link_nodename2').firstChild.nodeValue = mylink.b;
++        document.getElementById('link_nodename2').firstChild.nodeValue = mynode2.label;
+ 
+         document.getElementById('param').value = mylink.name;
+ 
+@@ -729,4 +735,4 @@
+     // add an onblur/onfocus handler to all the visible <input> items
+ 
+     jQuery("input").focus(help_handler).blur(help_handler);
+-}
+\ No newline at end of file
++}
+diff -ur weathermap.orig/editor.php weathermap/editor.php
+--- weathermap.orig/editor.php	2013-04-10 23:14:36.000000000 +0100
++++ weathermap/editor.php	2013-12-06 02:15:56.000000000 +0000
+@@ -15,10 +15,11 @@
+ 
+ // sensible defaults
+ $mapdir='configs';
+-$cacti_base = '../../';
+-$cacti_url = '/';
+-$ignore_cacti=FALSE;
++$observium_base = '../../';
++$observium_url = '/';
++$ignore_observium=FALSE;
+ $configerror = '';
++$whats_installed = '';
+ 
+ $config_loaded = @include_once 'editor-config.php';
+ 
+@@ -29,7 +30,7 @@
+ 
+ if( isset($_COOKIE['wmeditor']))
+ {
+-    $parts = split(":",$_COOKIE['wmeditor']);
++    //$parts = preg_split(":",$_COOKIE['wmeditor']);
+     
+     if( (isset($parts[0])) && (intval($parts[0]) == 1) ) { $use_overlay = TRUE; }
+     if( (isset($parts[1])) && (intval($parts[1]) == 1) ) { $use_relative_overlay = TRUE; }
+@@ -42,30 +43,37 @@
+ }
+ 
+ // check if the goalposts have moved
+-if( is_dir($cacti_base) && file_exists($cacti_base."/include/global.php") )
++if( is_dir($observium_base) && file_exists($observium_base."/config.php") )
+ {
+ 	// include the cacti-config, so we know about the database
+-	include_once($cacti_base."/include/global.php");
+-	$config['base_url'] = $cacti_url;
+-	$cacti_found = TRUE;
+-}
+-elseif( is_dir($cacti_base) && file_exists($cacti_base."/include/config.php") )
+-{
+-	// include the cacti-config, so we know about the database
+-	include_once($cacti_base."/include/config.php");
+-
+-	$config['base_url'] = $cacti_url;
+-	$cacti_found = TRUE;
++	include_once($observium_base."/config.php");
++	include_once($observium_base."/includes/defaults.inc.php");
++	//include_once($observium_base."/includes/definitions.inc.php");
++	//include_once($observium_base."/includes/functions.php");
++	//include_once($observium_base."html/includes/functions.inc.php");
++	//include_once($observium_base."html/includes/authenticate.inc.php");
++	//$config['base_url'] = $cacti_url;
++	$observium_found = TRUE;
++        if($config['project_name'] == 'LibreNMS') {
++                $whats_installed = 'LibreNMS';
++        } else {
++                $whats_installed = 'Observium';
++        }
+ }
+ else
+ {
+-	$cacti_found = FALSE;
++	$observium_found = FALSE;
+ }
+ 
+-if($cacti_found && isset($plugins))
+-{
+-	# here, we know we're part of a plugin - do auth stuff
+-}
++//if ($_SESSION['userlevel'] < '5')
++//{
++//  include("$observium_base/html/includes/error-no-perm.inc.php");
++//} else {
++
++//if($observium_found && isset($plugins))
++//{
++//	# here, we know we're part of a plugin - do auth stuff
++//}
+ 
+ if(! is_writable($mapdir))
+ {
+@@ -940,7 +948,7 @@
+ <?php
+ 		// if the cacti config was included properly, then 
+ 		// this will be non-empty, and we can unhide the cacti links in the Link Properties box
+-		if( ! isset($config['cacti_version']) )
++		if( ! isset($config['install_dir']) )
+ 		{
+ 			echo "    .cactilink { display: none; }\n";
+ 			echo "    .cactinode { display: none; }\n";
+@@ -1055,7 +1063,7 @@
+ 		  <tr>
+ 			<th>'Hover' Graph URL</th>
+ 			<td><input id="node_hover" name="node_hover" type="text" />
+-			<span class="cactinode"><a id="node_cactipick">[Pick from Cacti]</a></span></td>
++			<span class="cactinode"><a id="node_observiumpick">[Pick from <?php echo $whats_installed?>]</a></span></td>
+ 		  </tr>
+ 		  <tr>
+ 			<th>Icon Filename</th>
+@@ -1114,7 +1122,7 @@
+ 
+ 	  <div class="dlgBody">
+ 		<div class="comment">
+-		  Link from '<span id="link_nodename1">%NODE1%</span>' to '<span id="link_nodename2">%NODE2%</span>'
++		  Link from '<span id="link_nodename1">%NAME2%</span>' to '<span id="link_nodename2">%NODE2%</span>'
+ 		</div>
+ 
+ 		<input size="6" name="link_name" type="hidden" />
+@@ -1136,8 +1144,8 @@
+ 			</tr>
+ 			<tr>
+ 			  <th>Data Source</th>
+-			  <td><input id="link_target" name="link_target" type="text" /> <span class="cactilink"><a id="link_cactipick">[Pick
+-			  from Cacti]</a></span></td>
++			  <td><input id="link_target" name="link_target" type="text" /> <span class="observiumlink"><a id="link_observiumpick">[Pick
++			  from <?php echo $whats_installed?>]</a></span></td>
+ 			</tr>
+ 			<tr>
+ 			  <th>Link Width</th>
+@@ -1496,4 +1504,5 @@
+ <?php
+ } // if mapname != ''
+ // vim:ts=4:sw=4:
++//}
+ ?>
+Only in weathermap/lib: .DS_Store
+diff -ur weathermap.orig/lib/editor.inc.php weathermap/lib/editor.inc.php
+--- weathermap.orig/lib/editor.inc.php	2013-04-02 23:58:42.000000000 +0100
++++ weathermap/lib/editor.inc.php	2013-12-06 02:15:56.000000000 +0000
+@@ -128,11 +128,12 @@
+         $errormessage .= $configerror.'<p>';
+     }
+ 		
+-	if (! $cacti_found && !$ignore_cacti) {
+-		$errormessage .= '$cacti_base is not set correctly. Cacti integration will be disabled in the editor.';
+-		if ($config_loaded != 1) { 
+-            $errormessage .= " You might need to copy editor-config.php-dist to editor-config.php and edit it."; 
+-        }
++	if ( !$observium_found && !$ignore_observium) {
++		//$errormessage .= '$cacti_base is not set correctly. Cacti integration will be disabled in the editor.';
++		//$errormessage .= "$observium_found and $ignore_observium";
++		//if ($config_loaded != 1) { 
++            	//$errormessage .= " You might need to copy editor-config.php-dist to editor-config.php and edit it."; 
++        	//}
+ 	}
+ 	
+ 	if ($errormessage != '') {
+Only in weathermap.orig/: logout.php
+Only in weathermap/: map-poller.php
+Only in weathermap.orig/: net-data.txt
+Only in weathermap.orig/: output
+Only in weathermap.orig/: random-bits
+Only in weathermap.orig/: setup.php
+diff -ur weathermap.orig/weathermap weathermap/weathermap
+--- weathermap.orig/weathermap	2013-04-02 20:50:32.000000000 +0100
++++ weathermap/weathermap	2013-12-06 02:15:56.000000000 +0000
+@@ -37,6 +37,7 @@
+ 		"version",
+ 		"help",
+ 		"image-uri=",
++		"base-href=",
+ 		"config=",
+ 		"output=",
+ 		"debug",
+@@ -85,6 +86,10 @@
+ 			$options_output['imageuri'] = $o[1];
+ 			break;
+ 
++		case '--base-href':
++			// $map->basehref=$o[1];
++			$options_output['basehref'] = $o[1];
++			break;
+ 		case '--dumpconfig':
+ 			//$map->dumpconfig=$o[1];
+ 			// $options_output['dumpconfig'] = $o[1];
+@@ -163,6 +168,7 @@
+                         print " --output {filename}      -  filename to write image. Default weathermap.png\n";
+                         print " --htmloutput {filename}  -  filename to write HTML. Default weathermap.html\n\n";
+                         
++			print " --base-href {uri}        - URI for Weathermap, i.e /weathermap/\n"; 
+                         print " --image-uri {uri}        -  URI to prefix <img> tags in HTML.\n";
+                         print " --bulge                  -  Enable link-bulging mode. See manual.\n\n";
+ 						
+@@ -256,6 +262,7 @@
+ 		$fd=fopen($htmlfile, 'w');
+ 		fwrite($fd,
+ 			'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head>');
++		fwrite($fd,"<base href=\"$map->basehref\">");
+ 		if($map->htmlstylesheet != '') fwrite($fd,'<link rel="stylesheet" type="text/css" href="'.$map->htmlstylesheet.'" />');
+ 		fwrite($fd,'<meta http-equiv="refresh" content="300" /><title>' . $map->ProcessString($map->title, $map) . '</title></head><body>');
+ 
+Only in weathermap.orig/: weathermap-cacti-plugin-mgmt.php
+Only in weathermap.orig/: weathermap-cacti-plugin.css
+Only in weathermap.orig/: weathermap-cacti-plugin.php
+Only in weathermap.orig/: weathermap-cacti-rebuild.php
+Only in weathermap.orig/: weathermap.conf
