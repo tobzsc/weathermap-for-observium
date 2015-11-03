@@ -1,7 +1,7 @@
 1. Install the Weathermap in the Observium / LibreNMS folder
 
 ```
-    cd /opt/observium 
+    cd /opt/observium/html 
     git clone https://github.com/nicolasvion/weathermap-for-observium.git weathermap
 ```
 
