@@ -1,5 +1,7 @@
 1. Install the Weathermap in the Observium / LibreNMS folder
+
     cd /opt/observium 
+    
     git clone https://github.com/nicolasvion/weathermap-for-observium.git weathermap
 
 2. Edit data-pick.php and make sure the variables at the start are all ok.
