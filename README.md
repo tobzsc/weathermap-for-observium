@@ -14,7 +14,8 @@
 
 7. Enable the cron process:
 	Observium:
-        */5 * * * * /opt/observium/html/weathermap/weathermap --config=/opt/observium/html/weathermap/configs/config.conf --image-uri=http://domain.com/weathermap/maps/config.png 2>/dev/null 1>/dev/null
+
+*/5 * * * * /opt/observium/html/weathermap/weathermap --config=/opt/observium/html/weathermap/configs/config.conf --image-uri=http://domain.com/weathermap/maps/config.png 2>/dev/null 1>/dev/null
         
 8. If you are installing this into Observium then you can use the navbar-custom.inc.php by putting it into /opt/observium/html/includes/.
 
