@@ -3,7 +3,7 @@
 // ******************************************
 // sensible defaults
 $mapdir='configs';
-$observium_base = '/opt/observium';
+$observium_base = '/opt/observium/';
 $observium_url = '/';
 $ignore_observium=FALSE;
 $config['base_url'] = $observium_url;
