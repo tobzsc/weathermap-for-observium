@@ -3,7 +3,7 @@
 // ******************************************
 // sensible defaults
 $mapdir='configs';
-$observium_base = '/opt/observium/';
+$observium_base = '../../';
 $observium_url = '/';
 $ignore_observium=FALSE;
 $config['base_url'] = $observium_url;
@@ -30,9 +30,13 @@ else
 	$observium_found = FALSE;
 }
 
-$link = mysql_connect($config['db_host'],$config['db_user'],$config['db_pass'])
-                or die('Could not connect: ' . mysql_error());
-		mysql_selectdb($config['db_name'],$link) or die('Could not select database: '.mysql_error());
+// mysql_connect
+//$link = mysql_connect($config['db_host'],$config['db_user'],$config['db_pass'])
+//                or die('Could not connect: ' . mysql_error());
+//		mysql_select_db($config['db_name'],$link) or die('Could not select database: '.mysql_error());
+$link = mysqli_connect($config['db_host'],$config['db_user'],$config['db_pass'])
+                or die('Could not connect: ' . mysqli_error());
+		mysqli_select_db($link,$config['db_name']) or die('Could not select database: '.mysqli_error());
 
 
 // ******************************************
@@ -263,7 +267,9 @@ if(isset($_REQUEST['command']) && $_REQUEST["command"]=='link_step1')
 	//$SQL_picklist .= " order by name_cache;";
 	
 	 // Link query
-	 $result = mysql_query("SELECT device_id,hostname FROM devices ORDER BY hostname");
+	 //$result = mysql_query("SELECT device_id,hostname FROM devices ORDER BY hostname");
+	 $result = mysqli_query($link, "SELECT device_id,hostname FROM devices ORDER BY hostname");
+
 	 //$hosts = mysql_fetch_assoc($result);
 	 //$result = mysql_query($SQL_picklist);
 	 $hosts = 1;
@@ -278,7 +284,8 @@ if(sizeof($hosts) > 0) {
 
 	print '<option '.($host_id==-1 ? 'SELECTED' : '' ).' value="-1">Any</option>';
 	print '<option '.($host_id==0 ? 'SELECTED' : '' ).' value="0">None</option>';
-	while ($host = mysql_fetch_assoc($result))
+	//while ($host = mysql_fetch_assoc($result))
+	while ($host = mysqli_fetch_assoc($result))
 	{
 		print '<option ';
 		if($host_id==$host['device_id']) print " SELECTED ";
@@ -301,14 +308,17 @@ if(sizeof($hosts) > 0) {
 	}
 	
 	$query .= " ORDER BY hostname,ports.ifAlias";
-	$result = mysql_query($query);
+	//$result = mysql_query($query);
+	$result = mysqli_query($link, $query);
 
 	// print $SQL_picklist;
 
 	$i=0;
-	if( mysql_num_rows($result) > 0 )
+//	if( mysql_num_rows($result) > 0 )
+	if( mysqli_num_rows($result) > 0 )
 	{
-			while ($queryrows = mysql_fetch_assoc($result)) {
+		//while ($queryrows = mysql_fetch_assoc($result)) {
+		while ($queryrows = mysqli_fetch_assoc($result)) {
 			echo "<li class=\"row".($i%2)."\">";
 			$key = $queryrows['device_id']."','".$queryrows['hostname']."','".$queryrows['port_id']."','".$queryrows['ifAlias']."','".addslashes($queryrows['ifDescr'])."','".$queryrows['ifIndex'];
 			echo "<a href=\"#\" onclick=\"update_source_step1('$key')\">". $queryrows['hostname'] . "/" . $queryrows['ifDescr'] . " Desc:" . $queryrows['ifAlias'] . ":</a>";
@@ -356,8 +366,10 @@ if(isset($_REQUEST['command']) && $_REQUEST["command"]=='node_step1')
 	}
 	//$SQL_picklist .= " order by title_cache";	
 	
-	 $query = mysql_query("SELECT id,hostname AS name FROM `devices` ORDER BY hostname");
-	 $hosts = mysql_fetch_assoc($query);	
+	//$query = mysql_query("SELECT id,hostname AS name FROM `devices` ORDER BY hostname");
+	//$hosts = mysql_fetch_assoc($query);	
+	 $query = mysqli_query("SELECT id,hostname AS name FROM `devices` ORDER BY hostname");
+	 $hosts = mysqli_fetch_assoc($query);	
 
 ?>
 <html>
@@ -475,7 +487,8 @@ if(sizeof($hosts) > 0) {
 	print '<input id="overlib" name="overlib" type="checkbox" value="yes" '.($overlib ? 'CHECKED' : '' ).'> <label for="overlib">Set both OVERLIBGRAPH and INFOURL.</label><br />';
 
 	print '</form><div class="listcontainer"><ul id="dslist">';
-	$result = mysql_query($SQL_picklist);
+	//$result = mysql_query($SQL_picklist);
+	$result = mysqli_query($SQL_picklist);
 	if( mysql_num_rows($result) > 0)
 	{
 		$i=0;
